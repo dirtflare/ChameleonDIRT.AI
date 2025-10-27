@@ -1,0 +1,5 @@
+{
+  "name": "Chameleon DIRT.AI",
+  "description": "Upload a base ad image and apply multiple edit prompts simultaneously using Gemini. Generate, compare, and download creative variations with style presets and easy export options for social media.",
+  "requestFramePermissions": []
+}
