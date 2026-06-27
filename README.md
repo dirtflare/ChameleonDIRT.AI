@@ -1,22 +1,20 @@
 ![CI](https://github.com/dirtflare/ChameleonDIRT.AI/actions/workflows/ci.yml/badge.svg)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 <div align="center">
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# ChameleonDIRT.AI
 
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/drive/1kpI0Xc4UiCtKQarWzX4qpwUGNW_TMhC3
+A browser-based AI image editing toolkit built with React, TypeScript, Vite, and Gemini image generation. Upload an image, describe the transformation you want, and generate edited results while keeping your API key local.
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
-
+**Prerequisites:** Node.js
 
 1. Install dependencies:
    `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
+2. Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` to your Gemini API key
 3. Run the app:
    `npm run dev`
