@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  macOS launchd 設定例：毎朝 7:00 に daily-maintenance.sh を実行する。
+
+  導入手順:
+    1) 下の /ABSOLUTE/PATH/TO/obsidian-vault を自分のVaultの絶対パスに書き換える
+    2) cp scripts/com.obsidian.claude.maintenance.plist ~/Library/LaunchAgents/
+    3) launchctl load ~/Library/LaunchAgents/com.obsidian.claude.maintenance.plist
+    4) 解除する場合: launchctl unload ~/Library/LaunchAgents/com.obsidian.claude.maintenance.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.obsidian.claude.maintenance</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/bash</string>
+        <string>/ABSOLUTE/PATH/TO/obsidian-vault/scripts/daily-maintenance.sh</string>
+    </array>
+
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>7</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/ABSOLUTE/PATH/TO/obsidian-vault/logs/launchd.out.log</string>
+    <key>StandardErrorPath</key>
+    <string>/ABSOLUTE/PATH/TO/obsidian-vault/logs/launchd.err.log</string>
+
+    <!-- PATH に claude / node が通るように環境を明示（必要に応じて調整） -->
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin</string>
+    </dict>
+</dict>
+</plist>

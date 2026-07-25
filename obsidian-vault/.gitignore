@@ -1,0 +1,8 @@
+# 実行ログ（.gitkeep は残す）
+logs/*
+!logs/.gitkeep
+
+# Obsidian のワークスペース状態（個人環境依存なので共有しない）
+.obsidian/workspace.json
+.obsidian/workspace-mobile.json
+.obsidian/cache
