@@ -9,12 +9,22 @@ npm install          # no lockfile is committed; CI also uses `npm install`
 npm run dev          # Vite dev server on port 3000, bound to 0.0.0.0
 npm run build        # production build
 npm run preview      # serve the production build
-npx tsc --noEmit     # type check (no npm script for this yet)
+npm run typecheck    # tsc --noEmit
+npm test             # vitest run
+npm run test:watch   # vitest in watch mode
+
+npx vitest run utils/file.test.ts        # a single test file
+npx vitest run -t 'rejects an empty file' # a single test by name
 ```
 
-There is **no test runner and no linter configured**. CI (`.github/workflows/ci.yml`) runs
-`npm install`, `npm run lint --if-present` (currently a no-op, since no `lint` script exists),
-and `npm run build`. Issue #8 tracks adding real type/build checks; issue #2 tracks adding tests.
+Tests are Vitest with the `jsdom` environment (configured under `test` in `vite.config.ts`), and
+live next to the code as `*.test.ts`. CI runs typecheck, tests, and build.
+
+**There is still no linter.** `vite build` transpiles without type checking, so `npm run typecheck`
+is the only thing that catches type errors — run it before pushing.
+
+`tsconfig.json` does not enable `strict`. With `strictNullChecks` off, truthiness narrowing on a
+discriminated union does not work: use `if (result.valid === false)`, not `if (!result.valid)`.
 
 Requires `.env.local` with `GEMINI_API_KEY` (copy from `.env.example`).
 
@@ -68,7 +78,9 @@ packaging; social export presets (Instagram post/story dimensions) are defined i
 
 - **UI strings and code comments are Japanese; repository docs (README, CONTRIBUTING, SECURITY,
   issues) are English.** Match the surrounding language when editing.
-- `tsconfig.json` does not enable `strict`, and sets `allowImportingTsExtensions` with `noEmit`.
 - The `@/*` path alias maps to the repository root (configured in both `tsconfig.json` and `vite.config.ts`).
+- Uploads must go through `validateImageFile` in `utils/file.ts`. The `accept="image/*"` attribute
+  on the file input does not constrain the drag-and-drop path in `ControlsPanel`, so both entry
+  points funnel into `handleImageUpload` in `App.tsx`, which validates before setting state.
 - `types.ts` holds both shared interfaces and the global ambient declarations; the `// FIX:` comments
   there document past TypeScript conflicts — leave them in place unless resolving the underlying issue.

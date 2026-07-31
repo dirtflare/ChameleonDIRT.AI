@@ -15,8 +15,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          
 
+      # No lockfile is committed yet, so `npm ci` is not usable here.
+      # Switch this to `npm ci` once package-lock.json is tracked.
       - run: npm install
-      - run: npm run lint --if-present
-      - run: npm run build
+
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Test
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # `vite build` inlines GEMINI_API_KEY into the bundle (see docs/privacy.md).
+      # No key is set in CI, so this only fires if one is ever added to the
+      # workflow environment.
+      - name: Check build output for a leaked API key
+        run: |
+          if grep -rqE 'AIza[0-9A-Za-z_-]{35}' dist/; then
+            echo "::error::A Google API key appears in the build output."
+            exit 1
+          fi

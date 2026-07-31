@@ -16,8 +16,21 @@ Thank you for considering contributing to ChameleonDIRT.AI.
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run lint and build checks
+4. Run the checks below
 5. Open a pull request
+
+## Checks
+
+```
+npm run typecheck   # tsc --noEmit
+npm test            # vitest run
+npm run build
+```
+
+CI runs the same three. Note that `npm run build` does not check types, so `npm run typecheck`
+is not optional. There is no linter configured yet.
+
+Tests use Vitest and live beside the code they cover, as `*.test.ts`.
 
 ## Environment setup
 

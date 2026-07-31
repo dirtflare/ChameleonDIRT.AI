@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { ControlsPanel } from './components/ControlsPanel';
 import { ResultsGrid } from './components/ResultsGrid';
 import { GeneratedImage, ColorTemplate } from './types';
-import { fileToBase64, downloadImage } from './utils/file';
+import { fileToBase64, downloadImage, validateImageFile } from './utils/file';
 import { generateImage } from './services/gemini';
 import { Header } from './components/Header';
 import { PreviewModal } from './components/PreviewModal';
@@ -65,8 +65,20 @@ const App: React.FC = () => {
   };
 
   const handleImageUpload = (file: File) => {
+    const result = validateImageFile(file);
+    // strictNullChecksが無効なため、`!result.valid`では判別可能ユニオンが絞り込めない
+    if (result.valid === false) {
+      setError(result.message);
+      return;
+    }
+
+    // 以前のプレビューURLを解放してから差し替える
+    if (baseImage) {
+      URL.revokeObjectURL(baseImage.preview);
+    }
     const preview = URL.createObjectURL(file);
     setBaseImage({ file, preview });
+    setError(null);
   };
   
   const handleRemoveBaseImage = () => {
