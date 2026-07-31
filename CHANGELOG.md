@@ -7,6 +7,7 @@
 - Image upload validation for file type, size, and empty files, covering the drag-and-drop path
 - Cancel button and a completed/total counter during generation
 - Vitest test suite, `npm run typecheck`, and CI checks for both
+- `strictNullChecks` in `tsconfig.json`
 - Documentation: architecture notes, prompt examples, privacy and data handling, release checklist
 
 ### Changed
@@ -18,6 +19,12 @@
 
 ### Fixed
 
+- A missing `GEMINI_API_KEY` was read as a configured key, because the build embedded the string
+  `"undefined"`. The setup prompt stayed hidden and generation failed instead
+- A response with no image candidates (for example one stopped by a safety filter) crashed with a
+  `TypeError` instead of reporting that no image was returned
+- Choosing an API key outside Google AI Studio reported a failed dialog rather than explaining
+  that `GEMINI_API_KEY` belongs in `.env.local`
 - Per-prompt failures were swallowed by `Promise.allSettled`, so API key errors were never
   reported as such
 - Loading placeholders showed three tiles regardless of how many prompts were queued

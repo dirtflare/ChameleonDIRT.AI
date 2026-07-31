@@ -52,14 +52,27 @@ const App: React.FC = () => {
         }
       } else {
         console.warn('window.aistudioが見つかりません。APIキー選択UIは利用できません。');
-        // フォールバックとしてprocess.envをチェック
-        setIsApiKeySelected(!!process.env.API_KEY && process.env.API_KEY !== 'YOUR_API_KEY_HERE');
+        // フォールバックとしてprocess.envをチェック。
+        // 'undefined'は、ビルド時の置換でキー未設定が文字列化された場合に入りうる値。
+        const key = process.env.API_KEY;
+        const placeholders = ['', 'undefined', 'YOUR_API_KEY_HERE'];
+        setIsApiKeySelected(!!key && !placeholders.includes(key));
       }
     };
     checkApiKey();
   }, []);
   
   const handleSelectApiKey = async () => {
+    // AI Studio外ではダイアログが存在しない。自分で動かしている利用者には
+    // 「開けませんでした」ではなく、実際にやるべきことを案内する。
+    if (!window.aistudio) {
+      setError({
+        kind: 'apiKey',
+        message: 'この環境ではAPIキーの選択ダイアログを利用できません。.env.local に GEMINI_API_KEY を設定し、開発サーバーを再起動してください。',
+      });
+      return;
+    }
+
     try {
       await window.aistudio.openSelectKey();
       // レースコンディションを避けるため、成功を想定して即座にUIを更新
@@ -73,8 +86,7 @@ const App: React.FC = () => {
 
   const handleImageUpload = (file: File) => {
     const result = validateImageFile(file);
-    // strictNullChecksが無効なため、`!result.valid`では判別可能ユニオンが絞り込めない
-    if (result.valid === false) {
+    if (!result.valid) {
       setError({ kind: 'validation', message: result.message });
       return;
     }

@@ -31,13 +31,18 @@ export const generateImage = async (
       },
     });
 
-    for (const part of response.candidates[0].content.parts) {
-      if (part.inlineData) {
-        const base64ImageBytes: string = part.inlineData.data;
-        return `data:${part.inlineData.mimeType};base64,${base64ImageBytes}`;
+    // 安全フィルタなどで候補が返らないことがある。無防備に辿るとTypeErrorになり、
+    // 下の分かりやすいエラーに到達しないため、ここで存在を確認する。
+    const parts = response.candidates?.[0]?.content?.parts;
+
+    if (parts) {
+      for (const part of parts) {
+        if (part.inlineData?.data) {
+          return `data:${part.inlineData.mimeType ?? 'image/png'};base64,${part.inlineData.data}`;
+        }
       }
     }
-    
+
     throw new Error('APIレスポンスに画像データが見つかりませんでした。');
   } catch (error) {
     console.error('Geminiでの画像生成エラー:', error);

@@ -24,8 +24,13 @@ live next to the code as `*.test.ts` / `*.test.tsx`. Component tests use Testing
 **There is still no linter.** `vite build` transpiles without type checking, so `npm run typecheck`
 is the only thing that catches type errors — run it before pushing.
 
-`tsconfig.json` does not enable `strict`. With `strictNullChecks` off, truthiness narrowing on a
-discriminated union does not work: use `if (result.valid === false)`, not `if (!result.valid)`.
+`tsconfig.json` enables `strictNullChecks` but not full `strict` — turning on `strict` adds ~430
+errors, almost all `noImplicitAny`, while `strictNullChecks` alone costs 5 and catches real
+null-safety bugs. Keep new code null-safe rather than widening types to silence it.
+
+`vite.config.ts` must keep the `?? ''` on the `define` values. `JSON.stringify(undefined)` returns
+`undefined`, which Vite embeds as the **string** `"undefined"` — truthy, so a missing key reads as
+a present one.
 
 Requires `.env.local` with `GEMINI_API_KEY` (copy from `.env.example`).
 

@@ -213,6 +213,32 @@ describe('generation flow', () => {
   });
 });
 
+describe('API key selection outside AI Studio', () => {
+  it('explains what to do instead of reporting a failed dialog', async () => {
+    const user = userEvent.setup();
+    // AI Studio外ではwindow.aistudioが存在しない
+    delete (window as { aistudio?: unknown }).aistudio;
+    render(<App />);
+
+    await user.click(await screen.findByRole('button', { name: 'APIキーを選択' }));
+
+    expect(
+      await screen.findByText(/この環境ではAPIキーの選択ダイアログを利用できません/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/ダイアログを開けませんでした/)).not.toBeInTheDocument();
+  });
+
+  it('does not treat a missing key as a selected one', async () => {
+    // ビルド時置換でキー未設定が文字列"undefined"になり、キー有りと誤判定していた
+    delete (window as { aistudio?: unknown }).aistudio;
+    vi.stubEnv('API_KEY', 'undefined');
+    render(<App />);
+
+    expect(await screen.findByRole('button', { name: 'APIキーを選択' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'バリエーションを生成' })).toBeDisabled();
+  });
+});
+
 describe('upload validation in the real flow', () => {
   it('blocks an unsupported file before any request is made', async () => {
     // applyAccept: false でaccept属性による絞り込みを外し、accept属性が効かない

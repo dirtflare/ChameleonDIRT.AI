@@ -12,8 +12,10 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
+        // `?? ''`は必須。GEMINI_API_KEYが未設定だとJSON.stringifyがundefinedを返し、
+        // Viteはそれを文字列"undefined"として埋め込むため、キーが有るように見えてしまう。
+        'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY ?? ''),
+        'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY ?? '')
       },
       resolve: {
         alias: {

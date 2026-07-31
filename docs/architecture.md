@@ -113,9 +113,9 @@ resizing to the social presets defined in `ResultsGrid.tsx`, and ZIP packaging t
 
 - **UI strings and code comments are Japanese. Repository documentation is English.** Match the
   surrounding language.
-- `tsconfig.json` does not enable `strict`. With `strictNullChecks` off, truthiness narrowing on
-  a discriminated union does not work — write `if (result.valid === false)`, not
-  `if (!result.valid)`.
+- `tsconfig.json` enables `strictNullChecks` but not full `strict`. Enabling `strict` produces
+  roughly 430 errors, overwhelmingly `noImplicitAny`; `strictNullChecks` alone costs 5 and caught
+  three real defects. Write null-safe code rather than widening types to silence it.
 - `vite build` does not type check. Run `npm run typecheck` before pushing.
 - Tests are Vitest, in `*.test.ts` next to the code they cover. Logic worth testing belongs in
   `utils/`, where it can be tested without rendering.
