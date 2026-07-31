@@ -1,4 +1,58 @@
+import JSZip from 'jszip';
 import { GeneratedImage } from '../types';
+
+/**
+ * ブラウザでのプレビュー表示とGemini APIへの送信の両方が可能な形式のみを許可する。
+ * HEIC/HEIFはGemini側では扱えるが、Safari以外ではプレビューが表示できないため除外している。
+ */
+export const ACCEPTED_IMAGE_TYPES = ['image/png', 'image/jpeg', 'image/webp'] as const;
+
+/** base64化すると約1.33倍に膨らむため、リクエストサイズを考慮した上限 */
+export const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
+
+export type ImageValidationResult =
+  | { valid: true }
+  | { valid: false; message: string };
+
+/**
+ * アップロードされたファイルを検証する。
+ * input要素の`accept`属性はドラッグ&ドロップを素通しするため、両方の経路でこの関数を通す必要がある。
+ */
+export const validateImageFile = (file: File | null | undefined): ImageValidationResult => {
+  if (!file) {
+    return { valid: false, message: '画像ファイルが選択されていません。' };
+  }
+
+  if (!ACCEPTED_IMAGE_TYPES.includes(file.type as typeof ACCEPTED_IMAGE_TYPES[number])) {
+    return {
+      valid: false,
+      message: `対応していないファイル形式です。PNG、JPEG、WebPのいずれかを選択してください。`,
+    };
+  }
+
+  if (file.size === 0) {
+    return { valid: false, message: 'ファイルが空です。別の画像を選択してください。' };
+  }
+
+  if (file.size > MAX_IMAGE_BYTES) {
+    const limitMb = Math.round(MAX_IMAGE_BYTES / 1024 / 1024);
+    return {
+      valid: false,
+      message: `ファイルサイズが大きすぎます。${limitMb}MB以下の画像を選択してください。`,
+    };
+  }
+
+  return { valid: true };
+};
+
+/**
+ * ファイルシステムで無効な文字をアンダースコアに置換する。日本語などは維持する。
+ * 空文字になった場合はデフォルト名を返す。
+ */
+export const sanitizeFileName = (fileName: string, fallback = 'generated-image'): string => {
+  const sanitized = (fileName || '').trim().replace(/[\\/:*?"<>|]/g, '_');
+  return sanitized || fallback;
+};
 
 export const fileToBase64 = (file: File): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -16,22 +70,10 @@ export const fileToBase64 = (file: File): Promise<string> => {
 };
 
 export const downloadImage = (imageUrl: string, fileName: string) => {
-  // ユーザーが入力したファイル名が正しく適用されるように修正
-  // 1. ファイル名が空か確認し、デフォルト値を設定
-  const cleanFileName = (fileName || 'generated-image').trim();
-
-  // 2. ファイルシステムで無効な文字をアンダースコアに置換。日本語などは維持する
-  const sanitizedFileName = cleanFileName
-    .replace(/[\\/:*?"<>|]/g, '_');
-
-  // 3. サニタイズ後に空文字列になった場合に備えて再度デフォルト値を設定
-  const finalFileName = sanitizedFileName || 'generated-image';
-
   const link = document.createElement('a');
   link.href = imageUrl;
-  // 4. 最終的なファイル名をdownload属性に設定
-  link.download = `${finalFileName}.png`;
-  
+  link.download = `${sanitizeFileName(fileName)}.png`;
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);

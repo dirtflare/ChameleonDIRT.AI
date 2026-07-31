@@ -16,18 +16,32 @@ Thank you for considering contributing to ChameleonDIRT.AI.
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Run lint and build checks
+4. Run the checks below
 5. Open a pull request
+
+## Checks
+
+```
+npm run typecheck   # tsc --noEmit
+npm test            # vitest run
+npm run build
+```
+
+CI runs the same three. Note that `npm run build` does not check types, so `npm run typecheck`
+is not optional. There is no linter configured yet.
+
+Tests use Vitest and live beside the code they cover, as `*.test.ts`.
 
 ## Environment setup
 
-1. Clone the repo and install dependencies:
-   npm install
+See [Run Locally](README.md#run-locally) in the README for the full first-run steps, including
+the required Node version and troubleshooting.
 
-2. Copy .env.example to .env.local and add your Gemini API key.
+## Understanding the codebase
 
-3. Run the dev server:
-   npm run dev
+Read [docs/architecture.md](docs/architecture.md) before your first pull request. It covers where
+state lives, how the generation flow fans out across prompts, the error handling conventions, and
+a few footguns that are easy to trip over.
 
 ## Maintainer notes
 
