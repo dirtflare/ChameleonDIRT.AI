@@ -1,7 +1,6 @@
 // FIX: Import React to use React.ReactNode type.
 import React from 'react';
 
-// This declares the JSZip class globally for TypeScript to recognize it from the CDN script
 // FIX: Use `declare global` because adding an import turns this file into a module,
 // which would otherwise scope this declaration locally instead of globally.
 declare global {
@@ -18,11 +17,6 @@ declare global {
     // This can happen if another part of the environment (e.g., a global .d.ts file) also declares this property on Window, but as optional.
     // The application code already checks for its existence, so this change is safe.
     aistudio?: AIStudio;
-  }
-
-  class JSZip {
-    file(name: string, data: any, options?: any): this;
-    generateAsync(options?: { type: 'blob' }): Promise<Blob>;
   }
 }
 

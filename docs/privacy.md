@@ -68,9 +68,11 @@ of the request to the Gemini API.
 
 ## Third parties beyond the model provider
 
-`index.html` loads scripts from `cdn.tailwindcss.com`, `cdnjs.cloudflare.com`, and
-`aistudiocdn.com`. Loading a page therefore reveals your IP address and request metadata to those
-CDNs, as with any site that uses a CDN. Your images and prompts are not sent to them.
+`index.html` loads Tailwind from `cdn.tailwindcss.com`. Loading a page therefore reveals your IP
+address and request metadata to that CDN, as with any site that uses one. Your images and prompts
+are not sent to it. When the app is served unbuilt inside Google AI Studio, the importmap also
+resolves dependencies from `aistudiocdn.com`; a Vite build bundles them instead and does not
+contact that host.
 
 This project contains no analytics, telemetry, tracking, or error-reporting code.
 

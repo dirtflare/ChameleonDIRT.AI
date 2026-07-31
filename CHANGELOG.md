@@ -12,6 +12,8 @@
 
 ### Changed
 
+- JSZip is an npm dependency instead of a CDN global, so ZIP export no longer breaks when
+  `cdnjs.cloudflare.com` is unreachable
 - API key failures now show the dedicated help screen instead of a generic error
 - Error messages no longer include raw API error text, which can contain the request URL
 - Setup instructions expanded with prerequisites, first-run steps, and troubleshooting

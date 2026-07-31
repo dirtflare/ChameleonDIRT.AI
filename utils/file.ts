@@ -1,3 +1,4 @@
+import JSZip from 'jszip';
 import { GeneratedImage } from '../types';
 
 /**

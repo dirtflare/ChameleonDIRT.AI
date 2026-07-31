@@ -66,14 +66,13 @@ normal: successful images render and the rejected count becomes a user-facing er
 `index.html` loads Tailwind and JSZip from CDNs and declares an importmap pointing React and
 `@google/genai` at `aistudiocdn.com`. Consequences:
 
-- Tailwind classes work with no build step and no config file; there is no `tailwind.config.js` to edit.
-- `JSZip` is used as a **global** in `utils/file.ts` and is hand-declared as a global `class` in
-  `types.ts`. It is not an npm dependency, so it will not appear in `package.json`. There is no
-  fallback — if the CDN is blocked, the page is unstyled and every ZIP export throws.
-- The importmap is **inert under Vite**: Vite resolves `react`/`@google/genai` itself and bundles
-  them, so the browser never sees a bare specifier. The shipped versions are the ones in
-  `package.json`, and editing the importmap changes nothing. It exists for Google AI Studio,
-  which serves `index.html` unbuilt.
+- Tailwind classes work with no build step and no config file; there is no `tailwind.config.js` to
+  edit. It has no fallback — if the CDN is blocked the page renders unstyled, but nothing throws.
+- The importmap is **inert under Vite**: Vite resolves `react`/`@google/genai`/`jszip` itself and
+  bundles them, so the browser never sees a bare specifier and the shipped versions are the ones
+  in `package.json`. It exists for Google AI Studio, which serves `index.html` unbuilt. **A new
+  runtime dependency must be added to both `package.json` and the importmap** — otherwise local
+  development passes while the AI Studio path breaks.
 
 ### Image handling
 

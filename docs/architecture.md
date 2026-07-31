@@ -84,30 +84,31 @@ The second is a literal text substitution, so a production build contains the ke
 
 ## Dependencies that bypass npm
 
-`index.html` pulls in three things from outside npm. They behave differently, and the difference
-matters:
+`index.html` pulls in two things from outside npm, and they behave differently:
 
-**Tailwind and JSZip are real CDN dependencies.** Both are plain `<script src>` tags.
+**Tailwind is a real CDN dependency.** It is a plain `<script src>` tag, so classes work with no
+build step and no config file — there is no `tailwind.config.js`. It has no fallback: if
+`cdn.tailwindcss.com` is unreachable, the page renders unstyled. That degrades appearance only;
+nothing throws.
 
-- Tailwind works with no build step and no config file — there is no `tailwind.config.js`.
-- `JSZip` is a **global**, used in `utils/file.ts` and hand-declared in `types.ts`. It is not in
-  `package.json`. It has no fallback: if the CDN is unreachable, the page renders unstyled and
-  the "すべてダウンロード (.zip)" and preset export buttons throw `ReferenceError`. This also
-  means the app does not work offline or behind a network policy that blocks these hosts.
+**The importmap serves the unbuilt path only.** It maps `react`, `react-dom/`, `@google/genai`,
+and `jszip` to `aistudiocdn.com`. Under Vite those bare specifiers never reach the browser — Vite
+resolves them to pre-bundled deps in dev and inlines them into `dist/assets/index-*.js` on build —
+so the versions that actually ship are the ones in `package.json`.
 
-**The importmap is inert.** It maps `react`, `react-dom/`, and `@google/genai` to
-`aistudiocdn.com`, but Vite resolves those bare specifiers itself — rewriting them to pre-bundled
-deps in dev, and inlining them into `dist/assets/index-*.js` on build. The browser never sees a
-bare specifier, so the importmap never resolves anything. The versions that actually ship are the
-ones in `package.json`.
-
-Editing the importmap therefore has no effect. It is left in place because the app also runs
-inside Google AI Studio, which serves `index.html` without a Vite build.
+The importmap exists because the app also runs inside Google AI Studio, which serves `index.html`
+without a Vite build; there, the browser resolves those specifiers itself. **Adding a runtime
+dependency means adding it to `package.json` and to the importmap**, or the AI Studio path breaks
+while local development keeps working.
 
 ## Client-side export
 
 `utils/file.ts` handles everything after generation, with no server involved: `canvas`-based
 resizing to the social presets defined in `ResultsGrid.tsx`, and ZIP packaging through JSZip.
+
+ZIP entry names come from the prompt, normalized to ASCII. A prompt with no `[a-z0-9]` characters
+— any Japanese-only prompt — normalizes to an empty string and falls back to a positional
+`画像-N` name.
 
 ## Conventions
 

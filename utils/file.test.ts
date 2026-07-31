@@ -1,11 +1,14 @@
-import { describe, expect, it } from 'vitest';
+import JSZip from 'jszip';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   ACCEPTED_IMAGE_TYPES,
   MAX_IMAGE_BYTES,
+  downloadAllAsZip,
   fileToBase64,
   sanitizeFileName,
   validateImageFile,
 } from './file';
+import { GeneratedImage } from '../types';
 
 /** 指定したサイズとMIMEタイプを持つダミーファイルを作る */
 const makeFile = (
@@ -81,6 +84,70 @@ describe('sanitizeFileName', () => {
 
   it('does not treat a leading dot as empty', () => {
     expect(sanitizeFileName('.hidden')).toBe('.hidden');
+  });
+});
+
+describe('downloadAllAsZip', () => {
+  let captured: Blob | null;
+
+  const image = (prompt: string): GeneratedImage => ({
+    id: prompt,
+    prompt,
+    // "AQID" は 0x01 0x02 0x03
+    imageUrl: 'data:image/png;base64,AQID',
+  });
+
+  beforeEach(() => {
+    captured = null;
+    vi.stubGlobal('URL', {
+      ...URL,
+      createObjectURL: vi.fn((blob: Blob) => {
+        captured = blob;
+        return 'blob:zip';
+      }),
+      revokeObjectURL: vi.fn(),
+    });
+    // クリックでjsdomがナビゲーションを試みないよう握りつぶす
+    vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  /** 生成されたZIPを読み直して中身を確認する */
+  const entriesOf = async (blob: Blob) => {
+    const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+    return Object.keys(zip.files).sort();
+  };
+
+  it('packages one entry per image', async () => {
+    await downloadAllAsZip([image('first prompt'), image('second prompt')]);
+
+    expect(captured).toBeInstanceOf(Blob);
+    expect(await entriesOf(captured!)).toEqual(['first-prompt.png', 'second-prompt.png']);
+  });
+
+  it('preserves the decoded image bytes', async () => {
+    await downloadAllAsZip([image('only')]);
+
+    const zip = await JSZip.loadAsync(await captured!.arrayBuffer());
+    const bytes = await zip.file('only.png')!.async('uint8array');
+    expect(Array.from(bytes)).toEqual([1, 2, 3]);
+  });
+
+  it('falls back to a positional name when the prompt has no usable characters', async () => {
+    // 日本語のみのプロンプトは英数字への正規化で空になる
+    await downloadAllAsZip([image('背景を青にする')]);
+
+    expect(await entriesOf(captured!)).toEqual(['画像-1.png']);
+  });
+
+  it('produces a readable archive for an empty selection', async () => {
+    await downloadAllAsZip([]);
+
+    expect(await entriesOf(captured!)).toEqual([]);
   });
 });
 
