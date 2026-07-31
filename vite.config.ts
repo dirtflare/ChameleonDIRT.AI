@@ -22,6 +22,7 @@ export default defineConfig(({ mode }) => {
       },
       test: {
         environment: 'jsdom',
+        setupFiles: ['./vitest.setup.ts'],
         include: ['**/*.test.ts', '**/*.test.tsx'],
         exclude: ['node_modules/**', 'dist/**'],
       }

@@ -18,7 +18,8 @@ npx vitest run -t 'rejects an empty file' # a single test by name
 ```
 
 Tests are Vitest with the `jsdom` environment (configured under `test` in `vite.config.ts`), and
-live next to the code as `*.test.ts`. CI runs typecheck, tests, and build.
+live next to the code as `*.test.ts` / `*.test.tsx`. Component tests use Testing Library;
+`vitest.setup.ts` registers the `jest-dom` matchers. CI runs typecheck, tests, and build.
 
 **There is still no linter.** `vite build` transpiles without type checking, so `npm run typecheck`
 is the only thing that catches type errors — run it before pushing.
@@ -62,9 +63,12 @@ normal: successful images render and the rejected count becomes a user-facing er
 
 - Tailwind classes work with no build step and no config file; there is no `tailwind.config.js` to edit.
 - `JSZip` is used as a **global** in `utils/file.ts` and is hand-declared as a global `class` in
-  `types.ts`. It is not an npm dependency, so it will not appear in `package.json`.
-- The importmap can shadow the npm-installed React/genai versions at runtime; when versions look
-  inconsistent, check `index.html` as well as `package.json`.
+  `types.ts`. It is not an npm dependency, so it will not appear in `package.json`. There is no
+  fallback — if the CDN is blocked, the page is unstyled and every ZIP export throws.
+- The importmap is **inert under Vite**: Vite resolves `react`/`@google/genai` itself and bundles
+  them, so the browser never sees a bare specifier. The shipped versions are the ones in
+  `package.json`, and editing the importmap changes nothing. It exists for Google AI Studio,
+  which serves `index.html` unbuilt.
 
 ### Image handling
 

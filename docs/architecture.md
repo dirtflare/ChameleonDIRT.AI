@@ -84,14 +84,25 @@ The second is a literal text substitution, so a production build contains the ke
 
 ## Dependencies that bypass npm
 
-`index.html` loads Tailwind and JSZip from CDNs and declares an importmap pointing React and
-`@google/genai` at `aistudiocdn.com`. So:
+`index.html` pulls in three things from outside npm. They behave differently, and the difference
+matters:
+
+**Tailwind and JSZip are real CDN dependencies.** Both are plain `<script src>` tags.
 
 - Tailwind works with no build step and no config file — there is no `tailwind.config.js`.
 - `JSZip` is a **global**, used in `utils/file.ts` and hand-declared in `types.ts`. It is not in
-  `package.json`.
-- The importmap can shadow npm-installed versions at runtime. When versions look inconsistent,
-  check `index.html` as well as `package.json`.
+  `package.json`. It has no fallback: if the CDN is unreachable, the page renders unstyled and
+  the "すべてダウンロード (.zip)" and preset export buttons throw `ReferenceError`. This also
+  means the app does not work offline or behind a network policy that blocks these hosts.
+
+**The importmap is inert.** It maps `react`, `react-dom/`, and `@google/genai` to
+`aistudiocdn.com`, but Vite resolves those bare specifiers itself — rewriting them to pre-bundled
+deps in dev, and inlining them into `dist/assets/index-*.js` on build. The browser never sees a
+bare specifier, so the importmap never resolves anything. The versions that actually ship are the
+ones in `package.json`.
+
+Editing the importmap therefore has no effect. It is left in place because the app also runs
+inside Google AI Studio, which serves `index.html` without a Vite build.
 
 ## Client-side export
 
