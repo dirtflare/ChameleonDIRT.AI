@@ -34,13 +34,14 @@ Tests use Vitest and live beside the code they cover, as `*.test.ts`.
 
 ## Environment setup
 
-1. Clone the repo and install dependencies:
-   npm install
+See [Run Locally](README.md#run-locally) in the README for the full first-run steps, including
+the required Node version and troubleshooting.
 
-2. Copy .env.example to .env.local and add your Gemini API key.
+## Understanding the codebase
 
-3. Run the dev server:
-   npm run dev
+Read [docs/architecture.md](docs/architecture.md) before your first pull request. It covers where
+state lives, how the generation flow fans out across prompts, the error handling conventions, and
+a few footguns that are easy to trip over.
 
 ## Maintainer notes
 
