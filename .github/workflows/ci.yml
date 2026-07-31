@@ -15,10 +15,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
-      # No lockfile is committed yet, so `npm ci` is not usable here.
-      # Switch this to `npm ci` once package-lock.json is tracked.
-      - run: npm install
+      - run: npm ci
 
       - name: Type check
         run: npm run typecheck

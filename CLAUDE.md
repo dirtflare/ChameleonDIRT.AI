@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-npm install          # no lockfile is committed; CI also uses `npm install`
+npm ci               # install from the committed lockfile (what CI runs)
 npm run dev          # Vite dev server on port 3000, bound to 0.0.0.0
 npm run build        # production build
 npm run preview      # serve the production build
