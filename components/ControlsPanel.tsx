@@ -15,7 +15,9 @@ interface ControlsPanelProps {
   useTransparentBackground: boolean;
   setUseTransparentBackground: React.Dispatch<React.SetStateAction<boolean>>;
   onGenerate: () => void;
+  onCancel: () => void;
   isLoading: boolean;
+  progress: { done: number; total: number } | null;
   isApiKeySelected: boolean;
   onSelectApiKey: () => void;
   useColorTemplates: boolean;
@@ -36,6 +38,27 @@ const promptHints = [
     '全体をレトロな80年代風の広告デザインに変更。',
 ];
 
+/** キーボード操作とスクリーンリーダーに対応したトグル。 */
+const Toggle: React.FC<{
+  checked: boolean;
+  onChange: () => void;
+  labelledBy: string;
+}> = ({ checked, onChange, labelledBy }) => (
+  <button
+    type="button"
+    role="switch"
+    aria-checked={checked}
+    aria-labelledby={labelledBy}
+    onClick={onChange}
+    className={`relative inline-flex flex-shrink-0 items-center h-6 rounded-full w-11 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 focus-visible:ring-offset-2 focus-visible:ring-offset-gray-800 ${checked ? 'bg-violet-500' : 'bg-gray-600'}`}
+  >
+    <span
+      aria-hidden="true"
+      className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`}
+    />
+  </button>
+);
+
 export const ControlsPanel: React.FC<ControlsPanelProps> = ({
   baseImage,
   onImageUpload,
@@ -49,7 +72,9 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
   useTransparentBackground,
   setUseTransparentBackground,
   onGenerate,
+  onCancel,
   isLoading,
+  progress,
   isApiKeySelected,
   onSelectApiKey,
   useColorTemplates,
@@ -122,8 +147,9 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
           type="file"
           ref={fileInputRef}
           onChange={handleFileChange}
-          accept="image/*"
+          accept="image/png,image/jpeg,image/webp"
           className="hidden"
+          aria-label="ベース画像を選択"
         />
         {baseImage ? (
            <div className="relative">
@@ -137,59 +163,73 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
             </button>
           </div>
         ) : (
-          <div
-            className="bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-violet-400 transition-colors"
+          // buttonにすることでキーボードのTab移動とEnter/Space操作が標準で効く
+          <button
+            type="button"
+            className="w-full bg-gray-700/50 border-2 border-dashed border-gray-600 rounded-lg p-4 text-center cursor-pointer hover:border-violet-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
             onClick={() => fileInputRef.current?.click()}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
           >
-            <div className="text-gray-400 flex flex-col items-center py-4">
-              <UploadIcon className="w-8 h-8 mb-2" />
-              <p>クリックまたはドラッグしてアップロード</p>
-            </div>
-          </div>
+            <span className="text-gray-400 flex flex-col items-center py-4">
+              <UploadIcon className="w-8 h-8 mb-2" aria-hidden="true" />
+              <span>クリックまたはドラッグしてアップロード</span>
+              <span className="text-xs mt-1 text-gray-500">PNG / JPEG / WebP、10MBまで</span>
+            </span>
+          </button>
         )}
       </div>
 
       {/* 2. Edit Prompts */}
       <div>
         <h3 className="text-lg font-semibold mb-3 text-violet-300">2. 編集プロンプト</h3>
-        <div className="space-y-2">
+        <ul className="space-y-2">
           {prompts.map((prompt, index) => (
-            <div key={index} className="flex items-center bg-gray-700 rounded-md p-2">
+            <li key={index} className="flex items-center bg-gray-700 rounded-md p-2">
               <p className="flex-grow text-sm text-gray-200">{prompt}</p>
               <button
+                type="button"
                 onClick={() => handleRemovePrompt(index)}
-                className="p-1 text-gray-400 hover:text-red-400 transition-colors"
-                aria-label="プロンプトを削除"
+                className="p-1 text-gray-400 hover:text-red-400 transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400 rounded"
+                // 削除ボタンが並ぶため、どのプロンプトを消すのか読み上げでわかるようにする
+                aria-label={`プロンプトを削除: ${prompt}`}
               >
-                <TrashIcon className="w-4 h-4" />
+                <TrashIcon className="w-4 h-4" aria-hidden="true" />
               </button>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
         <div className="flex items-center mt-3">
+          <label htmlFor="newPrompt" className="sr-only">編集プロンプトを入力</label>
           <input
+            id="newPrompt"
             type="text"
             value={newPrompt}
             onChange={(e) => setNewPrompt(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleAddPrompt()}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                handleAddPrompt();
+              }
+            }}
             placeholder="例：背景を赤に変更..."
-            className="flex-grow bg-gray-900 border border-gray-600 rounded-l-md p-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
+            className="flex-grow min-w-0 bg-gray-900 border border-gray-600 rounded-l-md p-2 focus:ring-2 focus:ring-violet-500 focus:border-violet-500 outline-none"
           />
           <button
+            type="button"
             onClick={handleAddPrompt}
-            className="bg-violet-600 hover:bg-violet-700 text-white p-2"
+            className="bg-violet-600 hover:bg-violet-700 text-white p-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
             aria-label="プロンプトを追加"
           >
-            <PlusIcon className="w-5 h-5" />
+            <PlusIcon className="w-5 h-5" aria-hidden="true" />
           </button>
           <button
+            type="button"
             onClick={handleAddHint}
-            className="bg-gray-600 hover:bg-gray-700 text-white p-2 rounded-r-md"
+            className="bg-gray-600 hover:bg-gray-700 text-white p-2 rounded-r-md focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
             aria-label="プロンプトのヒントを追加"
           >
-            <LightbulbIcon className="w-5 h-5" />
+            <LightbulbIcon className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -200,8 +240,8 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label htmlFor="brandColor" className="text-gray-300">ブランドカラー</label>
-            <div className="flex items-center bg-gray-700 rounded-md px-2">
-              <span className="text-gray-400">#</span>
+            <div className="flex items-center bg-gray-700 rounded-md px-2 focus-within:ring-2 focus-within:ring-violet-500">
+              <span aria-hidden="true" className="text-gray-400">#</span>
               <input
                 id="brandColor"
                 type="text"
@@ -215,28 +255,25 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                 onChange={(e) => setBrandColor(e.target.value)}
                 className="w-6 h-6 bg-transparent border-none cursor-pointer"
                 style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
+                aria-label="ブランドカラーをカラーピッカーで選択"
               />
             </div>
           </div>
           <div className="flex items-center justify-between">
-            <label htmlFor="textureToggle" className="text-gray-300">テクスチャ</label>
-            <button
-              onClick={() => setUseTexture(!useTexture)}
-              className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${useTexture ? 'bg-violet-500' : 'bg-gray-600'}`}
-              id="textureToggle"
-            >
-              <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${useTexture ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
+            <span id="textureToggleLabel" className="text-gray-300">テクスチャ</span>
+            <Toggle
+              checked={useTexture}
+              onChange={() => setUseTexture(!useTexture)}
+              labelledBy="textureToggleLabel"
+            />
           </div>
           <div className="flex items-center justify-between">
-            <label htmlFor="transparentToggle" className="text-gray-300">背景の透過</label>
-            <button
-              onClick={() => setUseTransparentBackground(!useTransparentBackground)}
-              className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${useTransparentBackground ? 'bg-violet-500' : 'bg-gray-600'}`}
-              id="transparentToggle"
-            >
-              <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${useTransparentBackground ? 'translate-x-6' : 'translate-x-1'}`} />
-            </button>
+            <span id="transparentToggleLabel" className="text-gray-300">背景の透過</span>
+            <Toggle
+              checked={useTransparentBackground}
+              onChange={() => setUseTransparentBackground(!useTransparentBackground)}
+              labelledBy="transparentToggleLabel"
+            />
           </div>
         </div>
       </div>
@@ -246,31 +283,33 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
         <h3 className="text-lg font-semibold mb-3 text-violet-300">4. 個別カラー指定</h3>
         <div className="space-y-4">
             <div className="flex items-center justify-between">
-                <label htmlFor="colorTemplateToggle" className="text-gray-300">機能を有効化</label>
-                <button
-                    onClick={() => setUseColorTemplates(!useColorTemplates)}
-                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${useColorTemplates ? 'bg-violet-500' : 'bg-gray-600'}`}
-                    id="colorTemplateToggle"
-                >
-                    <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${useColorTemplates ? 'translate-x-6' : 'translate-x-1'}`} />
-                </button>
+                <span id="colorTemplateToggleLabel" className="text-gray-300">機能を有効化</span>
+                <Toggle
+                    checked={useColorTemplates}
+                    onChange={() => setUseColorTemplates(!useColorTemplates)}
+                    labelledBy="colorTemplateToggleLabel"
+                />
             </div>
             {useColorTemplates && (
                 <div className="space-y-3 pt-4 mt-4 border-t border-gray-700/50">
                     {colorTemplates.map((template, index) => (
                         <div key={index} className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => handleColorTemplateToggle(index)}
-                                    className={`relative inline-flex items-center h-6 rounded-full w-11 transition-colors ${template.enabled ? 'bg-violet-500' : 'bg-gray-600'}`}
-                                    aria-label={`${template.category}を${template.enabled ? '無効化' : '有効化'}`}
+                                <Toggle
+                                    checked={template.enabled}
+                                    onChange={() => handleColorTemplateToggle(index)}
+                                    labelledBy={`color-template-label-${index}`}
+                                />
+                                <label
+                                    id={`color-template-label-${index}`}
+                                    htmlFor={`color-template-${index}`}
+                                    className={`text-sm ${template.enabled ? 'text-gray-300' : 'text-gray-500'}`}
                                 >
-                                    <span className={`inline-block w-4 h-4 transform bg-white rounded-full transition-transform ${template.enabled ? 'translate-x-6' : 'translate-x-1'}`} />
-                                </button>
-                                <label htmlFor={`color-template-${index}`} className={`text-sm ${template.enabled ? 'text-gray-300' : 'text-gray-500'}`}>{template.category}</label>
+                                    {template.category}
+                                </label>
                             </div>
-                            <div className={`flex items-center bg-gray-700 rounded-md px-2 ${!template.enabled && 'opacity-50'}`}>
-                                <span className="text-gray-400">#</span>
+                            <div className={`flex items-center bg-gray-700 rounded-md px-2 focus-within:ring-2 focus-within:ring-violet-500 ${!template.enabled && 'opacity-50'}`}>
+                                <span aria-hidden="true" className="text-gray-400">#</span>
                                 <input
                                     id={`color-template-${index}`}
                                     type="text"
@@ -286,6 +325,7 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
                                     className="w-6 h-6 bg-transparent border-none cursor-pointer"
                                     style={{ WebkitAppearance: 'none', MozAppearance: 'none', appearance: 'none' }}
                                     disabled={!template.enabled}
+                                    aria-label={`${template.category}の色をカラーピッカーで選択`}
                                 />
                             </div>
                         </div>
@@ -313,28 +353,50 @@ export const ControlsPanel: React.FC<ControlsPanelProps> = ({
         </div>
       )}
 
-      {/* Generate Button */}
-      <button
-        onClick={onGenerate}
-        disabled={!isApiKeySelected || isLoading || !baseImage || prompts.length === 0}
-        className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? (
-          <>
-            {/* FIX: The viewBox attribute contained invalid text, which broke JSX parsing. Replaced it with a standard value. */}
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>生成中...</span>
-          </>
-        ) : (
-          <>
-            <SparklesIcon className="w-5 h-5" />
-            <span>バリエーションを生成</span>
-          </>
+      {/* Generate / Cancel */}
+      <div className="space-y-2">
+        <button
+          type="button"
+          onClick={onGenerate}
+          disabled={!isApiKeySelected || isLoading || !baseImage || prompts.length === 0}
+          className="w-full bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-bold py-3 px-4 rounded-lg flex items-center justify-center space-x-2 hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-300"
+        >
+          {isLoading ? (
+            <>
+              {/* FIX: The viewBox attribute contained invalid text, which broke JSX parsing. Replaced it with a standard value. */}
+              <svg aria-hidden="true" className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              <span>
+                {progress ? `生成中... (${progress.done}/${progress.total})` : '生成中...'}
+              </span>
+            </>
+          ) : (
+            <>
+              <SparklesIcon className="w-5 h-5" aria-hidden="true" />
+              <span>バリエーションを生成</span>
+            </>
+          )}
+        </button>
+
+        {isLoading && (
+          <button
+            type="button"
+            onClick={onCancel}
+            className="w-full bg-gray-700 hover:bg-gray-600 text-gray-200 font-semibold py-2 px-4 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+          >
+            キャンセル
+          </button>
         )}
-      </button>
+
+        {/* 進捗をスクリーンリーダーにも伝える */}
+        <p aria-live="polite" className="sr-only">
+          {isLoading && progress
+            ? `画像を生成しています。${progress.total}件中${progress.done}件完了。`
+            : ''}
+        </p>
+      </div>
     </div>
   );
 };

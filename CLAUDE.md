@@ -79,6 +79,9 @@ packaging; social export presets (Instagram post/story dimensions) are defined i
 - **UI strings and code comments are Japanese; repository docs (README, CONTRIBUTING, SECURITY,
   issues) are English.** Match the surrounding language when editing.
 - The `@/*` path alias maps to the repository root (configured in both `tsconfig.json` and `vite.config.ts`).
+- User-facing errors are `AppError` objects (`utils/errors.ts`), not strings. Branch on `kind`,
+  never on the message text. Raw exception text goes to `console.error` via `readErrorDetail` and
+  must not be rendered — Gemini errors can embed the request URL, which carries the API key.
 - Uploads must go through `validateImageFile` in `utils/file.ts`. The `accept="image/*"` attribute
   on the file input does not constrain the drag-and-drop path in `ControlsPanel`, so both entry
   points funnel into `handleImageUpload` in `App.tsx`, which validates before setting state.

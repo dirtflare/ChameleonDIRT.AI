@@ -3,11 +3,12 @@ import { GoogleGenAI, Modality } from '@google/genai';
 export const generateImage = async (
   base64Image: string,
   mimeType: string,
-  prompt: string
+  prompt: string,
+  abortSignal?: AbortSignal
 ): Promise<string> => {
   // 最新のAPIキーを確実に使用するため、呼び出しごとにインスタンスを生成
   const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
+
   try {
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash-image',
@@ -26,6 +27,7 @@ export const generateImage = async (
       },
       config: {
         responseModalities: [Modality.IMAGE],
+        abortSignal,
       },
     });
 
